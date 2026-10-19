@@ -551,12 +551,17 @@ const TOUR = "WETTERBERICHT";
 let tourAt = 0, tourWait = 1.2;
 function tourStep(dt) {
   if (current && current.at < current.hold + 0.25) return;
+  // rewind only once the last letter's hold is over, and start the tape fresh
+  if (tourAt >= TOUR.length) {
+    tourAt = 0; tourWait = 3.2; pos = [...START]; current = null;
+    typedIn = typedOut = ""; tapeIn.textContent = tapeOut.textContent = ""; writePath(-1);
+    return;
+  }
   tourWait -= dt;
   if (tourWait > 0) return;
   press(TOUR[tourAt]);
   tourAt++;
-  if (tourAt >= TOUR.length) { tourAt = 0; tourWait = 3.2; pos = [...START]; }
-  else tourWait = 0.15;
+  tourWait = 0.15;
 }
 
 function tick(now) {
