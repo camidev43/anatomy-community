@@ -420,10 +420,10 @@ put(
 );
 
 const WEIGHT_SPECS = [
-  { z0: 67.2, z1: 72.8, r: 17.2, bar: 25 },
-  { z0: 72.8, z1: 78.4, r: 16.2, bar: 25 },
-  { z0: 78.4, z1: 84.0, r: 15.2, bar: 25 },
-  { z0: 84.0, z1: 89.6, r: 14.2, bar: 25 },
+  { z0: 67.2, z1: 72.8, r: 16.8, bar: 25 },
+  { z0: 72.8, z1: 78.4, r: 16.8, bar: 25 },
+  { z0: 78.4, z1: 84.0, r: 16.8, bar: 25 },
+  { z0: 84.0, z1: 89.6, r: 16.8, bar: 25 },
 ];
 WEIGHT_SPECS.forEach((w, i) => {
   const midZ = (w.z0 + w.z1) / 2;
@@ -506,7 +506,7 @@ turned(
   { inner: k.fadedSvg(G.ribsOf(GF, 51.5, 55.5, 6.0, 18, P, { fade: [0.1, 0.55], seams: true }), { tone: "lo" }) },
 );
 
-const gTicks = k.radialTicks(GAUGE[0], GAUGE[1], GAUGE_R - 2.2, 60, 5, GAUGE_TOP, [1.4, 3.0], P);
+const gTicks = k.radialTicks(GAUGE[0], GAUGE[1], GAUGE_R - 2.2, 24, 2, GAUGE_TOP, [1.4, 3.0], P, -135 * DEG, 270 * DEG);
 const needleAt = (bar) => {
   const frac = Math.max(0, Math.min(1.05, bar / MAX_BAR));
   const angle = (-135 + frac * 270) * DEG;
@@ -691,6 +691,15 @@ function hold() {
     }
   }, 4000);
 }
+function snap() {
+  ram = targetRam;
+  const nominal = targetCount * 25;
+  const supply = ram * 125;
+  lift = supply <= nominal - 4 ? 0 : Math.min(1, (supply - (nominal - 4)) / 18);
+  liftVel = 0;
+  bar = lift > 0.02 && lift < 0.96 ? nominal : Math.min(120, Math.max(0, supply));
+  for (let i = 0; i < 4; i++) wLift[i] = i < targetCount ? 0 : 1;
+}
 function step(dt) {
   if (touring && !drag) {
     clock += dt;
@@ -705,7 +714,7 @@ function step(dt) {
   const force = (eqLift - lift) * 65 - liftVel * 12;
   liftVel += force * dt;
   lift = Math.max(0, Math.min(1, lift + liftVel * dt));
-  const targetBar = lift > 0.02 && lift < 0.96 ? nominal + (lift - 0.5) * 1.6 : Math.min(120, Math.max(0, supply));
+  const targetBar = lift > 0.02 && lift < 0.96 ? nominal : Math.min(120, Math.max(0, supply));
   bar += (targetBar - bar) * (1 - Math.exp(-dt * 12));
   for (let i = 0; i < 4; i++) {
     const goal = i < targetCount ? 0 : 1;
@@ -749,7 +758,8 @@ function draw() {
 function tick(now) {
   const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
   last = now;
-  if (still.matches && !drag) {
+  if (still.matches) {
+    snap();
     draw();
     frame = 0;
     return;
@@ -765,6 +775,11 @@ function tick(now) {
   frame = visible && busy ? requestAnimationFrame(tick) : 0;
 }
 function run() {
+  if (still.matches) {
+    snap();
+    draw();
+    return;
+  }
   if (!frame && visible) {
     last = 0;
     frame = requestAnimationFrame(tick);
