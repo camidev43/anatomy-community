@@ -24,7 +24,7 @@ const FOOT_H = 5;
 
 const O1 = [-26, 0];
 const O2 = [22, 0];
-const O3 = [22, 41];
+const O3 = [22, 43];
 
 const PED1_H = 4.5;
 const PED2_H = 13.0;
@@ -33,10 +33,12 @@ const CRANK_R = 22;
 const CRANK_Z0 = PED1_H;
 const CRANK_Z1 = 7.5;
 const ARM_Z1 = 9.8;
-const PIN_R_ORBIT = 28.5;
-const PIN_Z1 = 11.6;
+const PIN_R_ORBIT = 48 * Math.SQRT1_2;
+const PIN_Z1 = 17.2;
 
-const WHEEL_R = 32;
+const WHEEL_R = 48 * Math.SQRT1_2;
+const CORE_R = 11.2;
+const SLOT_HALF = 2.8;
 const WHEEL_Z0 = PED2_H;
 const WHEEL_Z1 = 16.6;
 const HUB_Z1 = 19.6;
@@ -127,14 +129,14 @@ function buildStatics() {
   });
 
   const ped2Svg =
-    S(k.cylinder(O2[0], O2[1], 11.5, 0, PED2_H, P, 32, 0.6), { tone: "lo" }) +
-    L(k.ring(O2[0], O2[1], 9.2, PED2_H, P, 24), { tone: "faint" });
+    S(k.cylinder(O2[0], O2[1], 9.5, 0, PED2_H, P, 32, 0.6), { tone: "lo" }) +
+    L(k.ring(O2[0], O2[1], 7.6, PED2_H, P, 24), { tone: "faint" });
   put({
     name: "stand.pedestal.wheel",
     layer: "mid",
     at: [O2[0], O2[1], PED2_H / 2],
     svg: ped2Svg,
-    shapes: [A.cylinder(O2[0], O2[1], 11.5, 0, PED2_H)],
+    shapes: [A.cylinder(O2[0], O2[1], 9.5, 0, PED2_H)],
   });
 
   const ped3Svg = S(k.cylinder(O3[0], O3[1], 4.2, 0, PED2_H, P, 24, 0.3), { tone: "lo" });
@@ -146,7 +148,7 @@ function buildStatics() {
     shapes: [A.cylinder(O3[0], O3[1], 4.2, 0, PED2_H)],
   });
 
-  const idxBox = { x: 58, y: -4.5, w: 12, d: 9, r: 1.6 };
+  const idxBox = { x: 60, y: -4.5, w: 12, d: 9, r: 1.6 };
   const idxSvg =
     S(k.slabOf(idxBox, 0, WHEEL_Z1, P, 6, 0.5), { tone: "mid" }) +
     L(k.lineOnTop([idxBox.x + 2, 0], [idxBox.x + idxBox.w - 2.5, 0], WHEEL_Z1, P), { tone: "hi", free: true });
@@ -172,12 +174,12 @@ export function genevaWheelAngle(crankDeg) {
   const rev = Math.floor((crankDeg + 180) / 360);
   const delta = crankDeg - rev * 360;
   const limit = 45;
-  if (delta <= -limit) return rev * 90 - 45;
-  if (delta >= limit) return rev * 90 + 45;
+  if (delta <= -limit) return -rev * 90 + 45;
+  if (delta >= limit) return -rev * 90 - 45;
   const rad = (delta * Math.PI) / 180;
   const s = Math.SQRT1_2;
   const stepRad = Math.atan2(s * Math.sin(rad), 1 - s * Math.cos(rad));
-  return rev * 90 + (stepRad * 180) / Math.PI;
+  return -rev * 90 - (stepRad * 180) / Math.PI;
 }
 
 export function pawlAngle(crankDeg) {
@@ -192,14 +194,14 @@ export const follow = (values) => {
   const c = values.crank ?? 0;
   const rev = Math.floor((c + 180) / 360);
   const delta = c - rev * 360;
-  let w = rev * 90 + 45;
+  let w = -rev * 90 - 45;
   let p = 0;
   if (delta <= -45) {
-    w = rev * 90 - 45;
+    w = -rev * 90 + 45;
   } else if (delta < 45) {
     const rad = (delta * Math.PI) / 180;
     const s = Math.SQRT1_2;
-    w = rev * 90 + (Math.atan2(s * Math.sin(rad), 1 - s * Math.cos(rad)) * 180) / Math.PI;
+    w = -rev * 90 - (Math.atan2(s * Math.sin(rad), 1 - s * Math.cos(rad)) * 180) / Math.PI;
     const cs = Math.cos(((delta / 45) * Math.PI) / 2);
     p = -6 * cs * cs;
   }
@@ -237,7 +239,7 @@ const crankDisc = T.round({
 });
 T.plane({ part: crankDisc, o: [O1[0], O1[1], CRANK_Z1], u: [1, 0, 0], v: [0, 1, 0], svg: crankFaceMarkup(), fade: [0.04, 0.3] });
 
-const armRect = { x: O1[0] - 6, y: -4.2, w: PIN_R_ORBIT + 6 + 3.2, d: 8.4, r: 2.2 };
+const armRect = { x: O1[0] - 6, y: -4.2, w: PIN_R_ORBIT + 6 + 2.8, d: 8.4, r: 2.2 };
 T.prism({
   name: "crank.arm",
   group: crank,
@@ -289,53 +291,90 @@ T.round({
 
 const PIN_X = O1[0] + PIN_R_ORBIT;
 T.round({
-  name: "crank.pin",
+  name: "crank.pin.base",
   group: crank,
   layer: crankLayer,
   F: VERT(PIN_X, 0),
   s0: ARM_Z1,
+  s1: WHEEL_Z0,
+  r: 2.1,
+  tone: "mid",
+  material: "brass",
+});
+T.round({
+  name: "crank.pin",
+  group: crank,
+  layer: turretLayer,
+  F: VERT(PIN_X, 0),
+  s0: WHEEL_Z0,
   s1: PIN_Z1,
-  r: 2.4,
+  r: 1.95,
   tone: "hi",
   material: "brass",
-  details: { bolts: [{ s: PIN_Z1, r: 0, count: 1, size: 0.45 }] },
+  details: { bolts: [{ s: PIN_Z1, r: 0, count: 1, size: 0.42 }] },
 });
 
-const wheelFaceMarkup = () => {
-  const ticks = [];
-  const slots = [];
-  for (let i = 0; i < 72; i++) {
-    const a = (i / 72) * Math.PI * 2;
-    ticks.push(tick(a, WHEEL_R - (i % 9 === 0 ? 3.2 : 1.6), WHEEL_R - 0.8));
-  }
-  for (let s = 0; s < 4; s++) {
-    const aSlot = ((s * 90 + 45) * Math.PI) / 180;
-    slots.push(tick(aSlot, 12, WHEEL_R - 0.8));
-  }
-  const labels = [0, 1, 2, 3]
-    .map((s) => {
-      const a = (s * Math.PI) / 2;
-      const r = WHEEL_R - 6.2;
-      return `<text class="iso-face-text" data-tone="mid" font-size="3.6" text-anchor="middle" transform="translate(${(Math.cos(a) * r).toFixed(3)} ${(Math.sin(a) * r).toFixed(3)}) rotate(${(s * 90 + 90).toFixed(1)}) translate(0 1.2)">S${s + 1}</text>`;
-    })
-    .join("");
-  return `<path class="iso-line" data-tone="lo" d="${ringPath(WHEEL_R - 0.8, 160)}"/><path class="iso-line" data-tone="lo" d="${ticks.join("")}"/><path class="iso-line" data-tone="mid" d="${slots.join("")}"/><path class="iso-line" data-tone="faint" d="${ringPath(12, 100)}"/>${labels}`;
-};
-
-const wheelDisc = T.round({
-  name: "wheel.disc",
+T.round({
+  name: "wheel.core",
   group: wheel,
   layer: turretLayer,
   F: VERT(O2[0], O2[1]),
   s0: WHEEL_Z0,
   s1: WHEEL_Z1,
-  r: WHEEL_R,
-  tone: "hi",
+  r: CORE_R,
+  tone: "mid",
   crease: "lo",
   material: "steel",
-  details: { ribs: { s0: WHEEL_Z0 + 0.6, s1: WHEEL_Z1 - 0.6, count: 120, fade: [0.08, 0.5], seams: true, tone: "lo" } },
 });
-T.plane({ part: wheelDisc, o: [O2[0], O2[1], WHEEL_Z1], u: [1, 0, 0], v: [0, 1, 0], svg: wheelFaceMarkup(), fade: [0.04, 0.3] });
+
+const sectorLocalPoly = () => {
+  const sumMin = (CORE_R + 0.05) * Math.SQRT2;
+  const uIn = sumMin - SLOT_HALF;
+  const a0 = Math.asin(SLOT_HALF / WHEEL_R);
+  const a1 = Math.PI / 2 - a0;
+  const arcSteps = 8;
+  const pts = [[uIn, SLOT_HALF]];
+  for (let i = 0; i <= arcSteps; i++) {
+    const a = a0 + ((a1 - a0) * i) / arcSteps;
+    pts.push([WHEEL_R * Math.cos(a), WHEEL_R * Math.sin(a)]);
+  }
+  pts.push([SLOT_HALF, uIn]);
+  return pts;
+};
+const baseSectorPoly = sectorLocalPoly();
+
+for (let s = 0; s < 4; s++) {
+  const rot = (s * Math.PI) / 2;
+  const cr = Math.cos(rot);
+  const sr = Math.sin(rot);
+  const poly = baseSectorPoly.map(([u, v]) => [
+    O2[0] + u * cr - v * sr,
+    O2[1] + u * sr + v * cr,
+  ]);
+  const aMid = rot + Math.PI / 4;
+  const rLabel = WHEEL_R - 4.8;
+  const sectorPart = T.prism({
+    name: `wheel.sector.${s}`,
+    group: wheel,
+    layer: turretLayer,
+    F: { o: [0, 0, 0], a: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0] },
+    polygon: poly,
+    s0: WHEEL_Z0,
+    s1: WHEEL_Z1,
+    tone: "hi",
+    crease: "lo",
+    bevel: 0.35,
+    material: "steel",
+  });
+  const sectorTicks = [];
+  for (let i = 2; i <= 16; i++) {
+    const a = rot + (i / 18) * (Math.PI / 2);
+    sectorTicks.push(tick(a, WHEEL_R - (i === 9 ? 2.8 : 1.5), WHEEL_R - 0.7));
+  }
+  const stationNum = ((s + 1) % 4) + 1;
+  const labelSvg = `<path class="iso-line" data-tone="lo" d="${sectorTicks.join("")}"/><text class="iso-face-text" data-tone="mid" font-size="3.4" text-anchor="middle" transform="translate(${(Math.cos(aMid) * rLabel).toFixed(3)} ${(Math.sin(aMid) * rLabel).toFixed(3)}) rotate(${(s * 90 + 135).toFixed(1)}) translate(0 1.2)">S${stationNum}</text>`;
+  T.plane({ part: sectorPart, o: [O2[0], O2[1], WHEEL_Z1], u: [1, 0, 0], v: [0, 1, 0], svg: labelSvg, fade: [0.04, 0.3] });
+}
 
 T.round({
   name: "wheel.hub",
@@ -350,13 +389,13 @@ T.round({
   details: { seams: [WHEEL_Z1 + 1.0], bolts: [{ s: HUB_Z1, r: 5.2, count: 6, size: 0.45, phase: 0.2 }] },
 });
 
-const PALLET_R = 19;
+const PALLET_R = 22.0;
 const PALLET_Z1 = WHEEL_Z1 + 2.0;
 for (let s = 0; s < 4; s++) {
-  const angle = (s * Math.PI) / 2;
+  const angle = (s * Math.PI) / 2 + Math.PI / 4;
   const cx = O2[0] + PALLET_R * Math.cos(angle);
   const cy = O2[1] + PALLET_R * Math.sin(angle);
-  const palletRect = { x: cx - 4.2, y: cy - 4.2, w: 8.4, d: 8.4, r: 1.4 };
+  const palletRect = { x: cx - 3.8, y: cy - 3.8, w: 7.6, d: 7.6, r: 1.3 };
   T.prism({
     name: `wheel.pallet.${s}`,
     group: wheel,
@@ -376,7 +415,7 @@ for (let s = 0; s < 4; s++) {
     F: VERT(cx, cy),
     s0: PALLET_Z1,
     s1: PALLET_Z1 + 2.2,
-    r: 2.7,
+    r: 2.5,
     tone: "hi",
     material: "chrome",
     details: { bolts: [{ s: PALLET_Z1 + 2.2, r: 0, count: 1, size: 0.42 }] },
@@ -457,7 +496,7 @@ const staticSvg = (list) =>
   `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg iso-layer" viewBox="0 0 ${WIDTH} ${HEIGHT}" aria-hidden="true">${list.join("")}</svg>`;
 const frontSvg = staticSvg(FRONT);
 
-const stage = `<div class="iso-stage iso-turn gd-stage" tabindex="0" role="slider" aria-label="Geneva indexing drive: drag around the crank or use arrow keys to turn the drive crank and index the 4-station turret" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-valuetext="crank at 0 degrees, station 1">${backSvg}${out.layerSvg("crank", { width: WIDTH, height: HEIGHT })}${staticSvg(MID)}${out.layerSvg("turret", { width: WIDTH, height: HEIGHT })}${frontSvg}</div>`;
+const stage = `<div class="iso-stage iso-turn gd-stage" tabindex="0" role="slider" aria-label="Geneva indexing drive: drag around the crank or use arrow keys to turn the drive crank and index the 4-station turret" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-valuetext="station 2 index, crank 0 degrees">${backSvg}${out.layerSvg("crank", { width: WIDTH, height: HEIGHT })}${staticSvg(MID)}${out.layerSvg("turret", { width: WIDTH, height: HEIGHT })}${frontSvg}</div>`;
 
 const EXTRA_CSS = `
 .gd-stage { cursor: grab; touch-action: none; user-select: none; }
@@ -483,11 +522,11 @@ const LIVE_SCRIPT = `
   function stationInfo(crankDeg) {
     const pose = follow({ crank: crankDeg });
     const cNorm = (((crankDeg % 360) + 360) % 360);
-    const wNorm = (((pose.wheel % 360) + 360) % 360);
+    const wNorm = (((45 - pose.wheel) % 360) + 360) % 360;
     const rev = Math.floor((crankDeg + 180) / 360);
     const delta = crankDeg - rev * 360;
     const indexing = Math.abs(delta) < 45;
-    const station = ((Math.round(pose.wheel / 90) % 4) + 4) % 4 + 1;
+    const station = ((Math.round(wNorm / 90) % 4) + 4) % 4 + 1;
     return { cNorm, wNorm, indexing, station };
   }
 
@@ -569,7 +608,7 @@ const body = k.plateHtml({
   fig: "Fig 3D",
   title: "Geneva indexing drive",
   hint: "Drag the crank · arrow keys",
-  readout: "S1 (index) · crank 0° · turret 0.0°",
+  readout: "S2 (index) · crank 0° · turret 45.0°",
   keys: [
     { mark: "raised", label: "Continuous drive crank with counterweight and brass drive roller pin" },
     { mark: "lit", label: "Four-station Geneva turret with work-holding pallets and detent pawl" },
