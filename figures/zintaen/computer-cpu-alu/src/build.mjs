@@ -365,11 +365,17 @@ function buildLevel2() {
   const { slab, lamp, line, settledLayer } = makeHelpers(P2, R);
 
   const carryTraces = [];
+  const xCin = ALU_SUB.x + 0.9 + 3.65;
+  const xCout = ALU_SUB.x + 0.9 + 7.35 + 1.08;
   for (let b = 0; b < 3; b++) {
     const sy0 = ALU_SUB.y + 1.0 + b * 2.9;
     const sy1 = ALU_SUB.y + 1.0 + (b + 1) * 2.9;
-    const cx = ALU_SUB.x + 0.9 + 7.0 + 1.2;
-    carryTraces.push(k.lineOnTop([cx, sy0 + 2.15], [cx, sy1 + 0.2], ALU_TOP, P2));
+    const yMid = sy0 + 2.62;
+    carryTraces.push(
+      k.lineOnTop([xCout, sy0 + 2.15], [xCout, yMid], ALU_TOP, P2),
+      k.lineOnTop([xCout, yMid], [xCin, yMid], ALU_TOP, P2),
+      k.lineOnTop([xCin, yMid], [xCin, sy1 + 0.2], ALU_TOP, P2),
+    );
   }
   slab("l2.aluSub", ALU_SUB, ALU_Z0, ALU_H, "lo", {
     bevel: 0.18,
@@ -379,7 +385,7 @@ function buildLevel2() {
   });
 
   const sliceH = 0.8;
-  const gateH = 0.62;
+  const gateH = 0.46;
   const sliceZ = ALU_TOP;
   const gateZ = ALU_TOP + sliceH;
 
@@ -387,20 +393,35 @@ function buildLevel2() {
     const sy = ALU_SUB.y + 1.0 + b * 2.9;
     const sliceBox = { x: ALU_SUB.x + 0.9, y: sy, w: ALU_SUB.w - 1.8, d: 2.35, r: 0.25 };
 
-    const xor1 = { x: sliceBox.x + 0.6, y: sy + 0.28, w: 2.4, d: 0.82, r: 0.14 };
-    const and1 = { x: sliceBox.x + 0.6, y: sy + 1.25, w: 2.4, d: 0.82, r: 0.14 };
-    const xor2 = { x: sliceBox.x + 3.8, y: sy + 0.28, w: 2.4, d: 0.82, r: 0.14 };
-    const and2 = { x: sliceBox.x + 3.8, y: sy + 1.25, w: 2.4, d: 0.82, r: 0.14 };
-    const orGate = { x: sliceBox.x + 7.0, y: sy + 0.65, w: 2.4, d: 1.05, r: 0.14 };
-    const sumPad = { x: sliceBox.x + 10.2, y: sy + 0.45, w: 2.8, d: 1.45, r: 0.18 };
+    const xor1 = { x: sliceBox.x + 0.45, y: sy + 0.2, w: 2.05, d: 0.72, r: 0.14 };
+    const and1 = { x: sliceBox.x + 0.45, y: sy + 1.12, w: 2.05, d: 0.72, r: 0.14 };
+    const xor2 = { x: sliceBox.x + 4.15, y: sy + 0.2, w: 2.05, d: 0.72, r: 0.14 };
+    const and2 = { x: sliceBox.x + 4.15, y: sy + 1.12, w: 2.05, d: 0.72, r: 0.14 };
+    const orGate = { x: sliceBox.x + 7.35, y: sy + 1.1, w: 2.15, d: 0.92, r: 0.14 };
+    const sumPad = { x: sliceBox.x + 10.35, y: sy + 0.35, w: 2.75, d: 1.45, r: 0.18 };
 
+    const xG0 = sliceBox.x + 2.8;
+    const xP = sliceBox.x + 3.2;
+    const xC = sliceBox.x + 3.65;
+    const xG1 = sliceBox.x + 6.85;
     const wires = [
-      k.lineOnTop([xor1.x + xor1.w - 0.3, xor1.y + 0.41], [xor2.x + 0.3, xor2.y + 0.41], gateZ, P2),
-      k.lineOnTop([and1.x + and1.w - 0.3, and1.y + 0.41], [and2.x + 0.3, and2.y + 0.41], gateZ, P2),
-      k.lineOnTop([xor2.x + xor2.w - 0.3, xor2.y + 0.41], [orGate.x + 0.3, orGate.y + 0.35], gateZ, P2),
-      k.lineOnTop([and2.x + and2.w - 0.3, and2.y + 0.41], [orGate.x + 0.3, orGate.y + 0.7], gateZ, P2),
-      k.lineOnTop([orGate.x + orGate.w - 0.3, orGate.y + 0.52], [sumPad.x + 0.3, sumPad.y + 0.72], gateZ, P2),
+      k.lineOnTop([xor1.x + xor1.w - 0.2, sy + 0.46], [xor2.x + 0.2, sy + 0.46], gateZ, P2),
+      k.lineOnTop([xP, sy + 0.46], [xP, sy + 1.36], gateZ, P2),
+      k.lineOnTop([xP, sy + 1.36], [and2.x + 0.2, sy + 1.36], gateZ, P2),
+      k.lineOnTop([xC, b === 0 ? sy + 0.72 : sy + 0.1], [xC, sy + 1.62], gateZ, P2),
+      k.lineOnTop([xC, sy + 0.72], [xor2.x + 0.2, sy + 0.72], gateZ, P2),
+      k.lineOnTop([xC, sy + 1.62], [and2.x + 0.2, sy + 1.62], gateZ, P2),
+      k.lineOnTop([xor2.x + xor2.w - 0.2, sy + 0.56], [sumPad.x + 0.2, sy + 0.56], gateZ, P2),
+      k.lineOnTop([and2.x + and2.w - 0.2, sy + 1.38], [orGate.x + 0.2, sy + 1.38], gateZ, P2),
+      k.lineOnTop([and1.x + and1.w - 0.2, sy + 1.62], [xG0, sy + 1.62], gateZ, P2),
+      k.lineOnTop([xG0, sy + 1.62], [xG0, sy + 2.14], gateZ, P2),
+      k.lineOnTop([xG0, sy + 2.14], [xG1, sy + 2.14], gateZ, P2),
+      k.lineOnTop([xG1, sy + 2.14], [xG1, sy + 1.78], gateZ, P2),
+      k.lineOnTop([xG1, sy + 1.78], [orGate.x + 0.2, sy + 1.78], gateZ, P2),
     ];
+    if (b < 3) {
+      wires.push(k.lineOnTop([orGate.x + 1.08, sy + 1.9], [orGate.x + 1.08, sy + 2.25], gateZ, P2));
+    }
     slab(`l2.fa${b}.base`, sliceBox, sliceZ, sliceH, "mid", {
       bevel: 0.08,
       extra: line(wires.join(""), "lo", { free: true }),
@@ -413,8 +434,8 @@ function buildLevel2() {
     slab(`l2.fa${b}.or`, orGate, gateZ, gateH, "hi", { crease: "none", part: `l2-orgate-${b}`, cls: "ca-gate" });
     slab(`l2.fa${b}.sumPad`, sumPad, gateZ, gateH * 0.8, "mid", { crease: "none" });
 
-    lamp(`l2.fa${b}.sLamp`, sumPad.x + 1.4, sumPad.y + 0.72, 0.46, 0.28, 0.36, 0.26, gateZ + gateH * 0.8, `l2-s-${b}`);
-    lamp(`l2.fa${b}.cLamp`, orGate.x + 1.2, orGate.y + 0.52, 0.4, 0.24, 0.3, 0.22, gateZ + gateH, `l2-c-${b}`);
+    lamp(`l2.fa${b}.sLamp`, sumPad.x + 1.38, sumPad.y + 0.72, 0.46, 0.28, 0.36, 0.26, gateZ + gateH * 0.8, `l2-s-${b}`);
+    lamp(`l2.fa${b}.cLamp`, orGate.x + 1.08, orGate.y + 0.46, 0.4, 0.24, 0.3, 0.22, gateZ + gateH, `l2-c-${b}`);
   }
 
   A.settle(R, P2);
@@ -456,6 +477,8 @@ const svgMarkup = k.figureSvg({
 
 const EXTRA_CSS = `<style>
   .iso-stage { cursor: pointer; touch-action: none; user-select: none; }
+  .iso-stage:focus { outline: none; }
+  .iso-stage:focus-visible { outline: 1px solid var(--anatomy-muted); outline-offset: 6px; }
   .ca-led .iso-top, .ca-led .iso-shade, .ca-gate .iso-top { transition: fill 120ms ease; }
   .ca-led[data-bit="1"] .iso-top { fill: var(--ca-on-top); }
   .ca-led[data-bit="1"] .iso-shade { fill: var(--ca-on-side); }
@@ -477,6 +500,7 @@ const LIVE_SCRIPT = `
   const stage = document.querySelector(".iso-stage");
   const svg = stage.querySelector("svg.iso-svg");
   const readout = document.querySelector("[data-readout]");
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
   const cover1L0 = stage.querySelector('[data-part="cover1-l0"]');
   const cover2 = stage.querySelector('[data-part="cover2"]');
   const g1 = stage.querySelector('[data-part="level1-group"]');
@@ -640,7 +664,7 @@ const LIVE_SCRIPT = `
 
   function setTargetZoom(next, instant = false) {
     targetZoom = clamp(next, 0, 2);
-    if (instant) {
+    if (instant || still.matches) {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       zoom = targetZoom;
@@ -651,6 +675,7 @@ const LIVE_SCRIPT = `
   }
 
   stage.addEventListener("click", (e) => {
+    stage.focus({ preventScroll: true });
     if (e.shiftKey) {
       opA = (opA + 1) & 15;
       render();
@@ -665,7 +690,7 @@ const LIVE_SCRIPT = `
     setTargetZoom(targetZoom + (e.deltaY < 0 ? 0.35 : -0.35));
   }, { passive: false });
 
-  window.addEventListener("keydown", (e) => {
+  stage.addEventListener("keydown", (e) => {
     if (e.key === "1") setTargetZoom(0);
     else if (e.key === "2") setTargetZoom(1);
     else if (e.key === "3") setTargetZoom(2);
@@ -706,7 +731,7 @@ const bodyHtml =
     keys: [
       { mark: "raised", label: "Three orthographic zoom levels (computer, CPU die, 4-bit ALU) in one world" },
       { mark: "lit", label: "Shared ripple-carry adder model driving LEDs and flags upward across all levels" },
-      { mark: "edge", label: "Removable covers lift along +z as the viewBox interpolates from P0 to P1 to P2" },
+      { mark: "edge", label: "Kovar lid and ALU shield lift away as the view zooms from board to die to gates" },
     ],
     caption:
       "A three-level recursive cutaway in a single isometric world. Level 0 shows a desktop logic board with its power supply, memory SIMMs, front binary display bar, and ceramic PGA CPU package capped by a Kovar heatspreader lid. Zooming to Level 1 lifts the Kovar lid to reveal the silicon die floorplan: microcode control ROM, 4-bit operand registers A and B, status flags (C, Z), and the ALU macro under its passivation shield. Zooming to Level 2 lifts the shield to expose the four full-adder bit slices (XOR, AND, OR gates and ripple-carry bridges). The bottom-level full-adder model computes A + B and feeds its sum and carry bits upward to the CPU registers and front-panel LEDs so all three levels agree at every instant.",
