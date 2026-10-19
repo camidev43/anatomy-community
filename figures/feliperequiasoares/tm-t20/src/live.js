@@ -154,7 +154,10 @@ function render(t) {
   printed = Math.round(f);
   // LEDs: POWER com a chave; ERROR pisca com a tampa aberta; PAPER no fim do rolo
   led("led-power", power);
-  led("led-error", power && angleNow > 4 && Math.floor(Math.max(0, x) * 3) % 2 === 0);
+  // ERROR pisca pelo relógio (não pela linha do tempo), então segue piscando com a tampa parada aberta;
+  // com movimento reduzido fica aceso fixo
+  const blink = still.matches || snapshot || Math.floor(performance.now() / 333) % 2 === 0;
+  led("led-error", power && angleNow > 4 && blink);
   led("led-paper", power && (low() || (feed.hold && remaining <= 0)) && !refill && angleNow < 4);
   writeReadout(t);
 }
@@ -212,7 +215,7 @@ function tick(now) {
     }
   }
   render(t);
-  frame = visible && (playing || (t >= 0 && t < END && angleNow > 4) || feedBusy()) ? requestAnimationFrame(tick) : 0;
+  frame = visible && (playing || (t >= 0 && t < END && angleNow > 4 && !still.matches) || feedBusy()) ? requestAnimationFrame(tick) : 0;
 }
 const feedBusy = () => feed.hold || feed.len > 0;
 function feedTick(dt) {
@@ -226,7 +229,7 @@ function feedTick(dt) {
   }
   const want = feed.hold || feed.len < feed.min;
   if (want && power && remaining > 0 && feed.len < FEED_MAX) {
-    const d = Math.min(30 * dt, remaining, FEED_MAX - feed.len);
+    const d = Math.min(30 * dt, remaining, (feed.hold ? FEED_MAX : Math.min(feed.min, FEED_MAX)) - feed.len);
     feed.len += d;
     remaining -= d;
     if (remaining <= 0) feed.min = 0;
@@ -243,7 +246,8 @@ function feedStart() {
   if (t >= 0) t = -1;
   lastF = 0;
   feed.hold = true;
-  feed.min = remaining > 0 ? 6 : 0;
+  // um toque avança uma linha: 1/6 pol (4,2 mm), o espaçamento padrão do ESC/POS
+  feed.min = remaining > 0 ? 4.2 : 0;
   render(t);
   run();
 }

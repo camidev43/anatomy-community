@@ -7,10 +7,10 @@ A tampa é refeita a cada quadro no navegador: o perfil dela gira em torno da do
 ## Experimente
 
 - **Toque na impressora:** percorre as cinco etapas (Abrir tampa → Rolo de 80 mm → Fechar → Imprimir → Cortar). As setas ← → andam uma etapa por vez.
-- **Segure FEED** (ou a tecla **F**): o papel avança em branco enquanto o botão está apertado, até 60 mm. Ao soltar, a guilhotina corta e a tira sai. Um toque rápido avança uma linha. Com a tampa aberta ou durante uma impressão, o FEED não responde, como na impressora real.
+- **Segure FEED** (ou a tecla **F**): o papel avança em branco enquanto o botão está apertado, até 60 mm. Ao soltar, a guilhotina corta e a tira sai. Um toque rápido avança uma linha: 4,2 mm, o espaçamento padrão de 1/6 pol do ESC/POS. Com a tampa aberta ou durante uma impressão, o FEED não responde, como na impressora real.
 - **Fim do papel:** cada cupom e cada FEED gastam o rolo, que encolhe de verdade (o raio segue a área de papel que sobra). O painel mostra quanto resta. Quando não há papel para um cupom inteiro, o **LED PAPER** acende laranja e a impressão para; ao tocar na impressora, a tampa abre e entra um rolo novo antes de imprimir.
 - **Chave liga/desliga** na lateral direita (ou a tecla **L**), com as marcas I/O. Desligada, os LEDs apagam e a figura para onde estava; ao religar, continua dali.
-- **LEDs:** POWER verde com a chave ligada, ERROR pisca com a tampa aberta, PAPER no fim do rolo.
+- **LEDs:** POWER verde com a chave ligada, ERROR pisca com a tampa aberta (inclusive parada numa etapa; aceso fixo com movimento reduzido), PAPER no fim do rolo.
 - **Tema:** Claro, Escuro ou Blueprint no seletor do topo. A escolha fica salva no navegador.
 
 ## Medidas e escopo
